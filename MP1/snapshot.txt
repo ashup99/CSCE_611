@@ -1,0 +1,25 @@
+¶nitialized console.
+
+Replace the following <NAME> field with your name.
+After your are done admiring your output, you can shutdown this 'machine'.
+
+WELCOME TO MY KERNEL!
+      ASHUTOSH PUNYANI
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
