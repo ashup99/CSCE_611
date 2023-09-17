@@ -31,8 +31,15 @@
 /*--------------------------------------------------------------------------*/
 /* DATA STRUCTURES */
 /*--------------------------------------------------------------------------*/
+// typedef struct frame_pool_objects
+// {
+//   unsigned long base_frame_no;
+//   unsigned long n_frames;
+//   struct frame_pool_objects* next_frame_pool_object;
+// }frame_pool_objects;
 
-/* -- (none) -- */
+// static frame_pool_objects* frame_pool_objects_list_head;
+// static frame_pool_objects* frame_pool_objects_list_current_pointer;
 
 /*--------------------------------------------------------------------------*/
 /* C o n t F r a m e   P o o l  */
@@ -43,20 +50,31 @@ class ContFramePool {
 private:
     /* -- DEFINE YOUR CONT FRAME POOL DATA STRUCTURE(s) HERE. */
     
+    unsigned char * bitmap;        // We implement the simple frame pool with a bitmap
+    unsigned int    nFreeFrames;   //
+    unsigned long   base_frame_no; // Where does the frame pool start in phys mem?
+    unsigned long   nframes;       // Size of the frame pool
+    unsigned long   info_frame_no; // Where do we store the management information?
+    
+    ContFramePool   *next;
     
     
+
     /* ---- STATE MANAGEMENT */
     
-    enum class FrameState {Free, Used, HoS};
+    enum class FrameState : unsigned char {Free, Used, HoS};
 
     FrameState get_state(unsigned long _frame_no);
     void set_state(unsigned long _frame_no, FrameState _state);
+    void release_frame(unsigned long _start_frame_no);
     
     
 public:
 
     // The frame size is the same as the page size, duh...    
     static const unsigned int FRAME_SIZE = Machine::PAGE_SIZE; 
+    static ContFramePool *head ;
+    static ContFramePool *current_pointer ;
 
     ContFramePool(unsigned long _base_frame_no,
                   unsigned long _n_frames,
@@ -93,7 +111,7 @@ public:
      _base_frame_no: Number of first frame to mark as inaccessible.
      _n_frames: Number of contiguous frames to mark as inaccessible.
      */
-    
+
     static void release_frames(unsigned long _first_frame_no);
     /*
      Releases a previously allocated contiguous sequence of frames
