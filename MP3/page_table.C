@@ -31,20 +31,25 @@ PageTable::PageTable()
    Console::puts("Constructed Page Table object Start\n");
    unsigned long page_directory_frame_number = kernel_mem_pool->get_frames(1);
    page_directory = (unsigned long *)(page_directory_frame_number * PAGE_SIZE);
+   Console::puts("page_directory ");
+   Console::putui(*page_directory);
+   Console::puts("\n");
 
    unsigned long page_table_frame_number = kernel_mem_pool->get_frames(1);
    unsigned long *page_table = (unsigned long*)(page_table_frame_number * PAGE_SIZE);
+   Console::puts("page table ");
+   Console::putui(*page_table);
+   Console::puts("\n");
 
   
 
    // mappng the first 4MB of memory
-   for(unsigned int i = 0, physical_address = 0; i < ENTRIES_PER_PAGE; i++,physical_address + PAGE_SIZE)
+   for(unsigned int i = 0, physical_address=0; i < ENTRIES_PER_PAGE; i++,physical_address += PAGE_SIZE)
    { 
       page_table[i] = physical_address | 0x3; // attribute set to: supervisor level, read/write, present(011 in binary)
    }
 
-   page_directory[0] = page_table; // attribute set to: supervisor level, read/write, present(011 in binary)
-   page_directory[0] = page_directory[0] | 0x3;
+   page_directory[0] = (unsigned long)page_table | 0x3; // attribute set to: supervisor level, read/write, present(011 in binary)
 
    for(unsigned int i = 1; i < ENTRIES_PER_PAGE; i++)
    {
@@ -57,14 +62,20 @@ PageTable::PageTable()
 
 void PageTable::load()
 {
-   assert(false);
-   Console::puts("Loaded page table\n");
+   Console::puts("Loaded page table Start\n");
+   write_cr3((unsigned long)page_directory);
+   current_page_table = this;
+   Console::puts("Loaded page table End\n");
 }
 
 void PageTable::enable_paging()
 {
-   assert(false);
-   Console::puts("Enabled paging\n");
+   Console::puts("Enabled paging Start\n");
+   unsigned long cr0_reg = (unsigned long)(read_cr0() | 0x80000000);
+   paging_enabled = 1;
+   write_cr0(cr0_reg);
+   Console::puts("Enabled paging End\n");
+
 }
 
 void PageTable::handle_fault(REGS * _r)
