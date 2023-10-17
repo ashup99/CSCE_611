@@ -48,8 +48,15 @@ VMPool::VMPool(unsigned long  _base_address,
                unsigned long  _size,
                ContFramePool *_frame_pool,
                PageTable     *_page_table) {
-    assert(false);
-    Console::puts("Constructed VMPool object.\n");
+    // assert(false);
+    Console::puts("Constructed VMPool object - start.\n");
+    base_address=_base_address;
+    size=_size;
+    frame_pool=_frame_pool;
+    page_table=_page_table;
+    
+    page_table->register(this);
+    Console::puts("Constructed VMPool object - end.\n");
 }
 
 unsigned long VMPool::allocate(unsigned long _size) {
