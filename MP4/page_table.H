@@ -56,8 +56,8 @@ private:
     /* DATA FOR CURRENT PAGE TABLE */
     unsigned long        * page_directory;     /* where is page directory located? */
 
-    VMPool* vm_pool_head = NULL;
-    VMPool* vm_pool_current = NULL;
+    static VMPool* vm_pool_head;
+    static VMPool* vm_pool_current;
 
     
 public:
@@ -102,10 +102,10 @@ public:
     void free_page(unsigned long _page_no);
     /* If page is valid, release frame and mark page invalid. */
 
-    unsigned long * PageTable::PDE_address(unsigned long addr);
+    unsigned long PDE_address(unsigned long addr);
     // return the address of the PDE
 
-    unsigned long * PageTable::PTE_address(unsigned long addr);
+    unsigned long PTE_address(unsigned long addr);
     // return the address of the PTE
     
 };

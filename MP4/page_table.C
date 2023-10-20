@@ -19,7 +19,8 @@ unsigned int PageTable::paging_enabled = 0;
 ContFramePool * PageTable::kernel_mem_pool = NULL;
 ContFramePool * PageTable::process_mem_pool = NULL;
 unsigned long PageTable::shared_size = 0;
-
+VMPool* PageTable::vm_pool_head=NULL;
+VMPool* PageTable::vm_pool_current=NULL;
 
 void PageTable::init_paging(ContFramePool * _kernel_mem_pool,
                             ContFramePool * _process_mem_pool,
@@ -36,8 +37,10 @@ void PageTable::init_paging(ContFramePool * _kernel_mem_pool,
 PageTable::PageTable()
 {
     Console::puts("Constructed Page Table object Start\n");
-   unsigned long page_directory_frame_number = process_mem_pool->get_frames(1);
+   unsigned long page_directory_frame_number = kernel_mem_pool->get_frames(1);
    page_directory = (unsigned long *)(page_directory_frame_number * PAGE_SIZE);
+   // last pde as valid and pointing to first pde for recurive table look up
+   page_directory[ENTRIES_PER_PAGE - 1] = (((unsigned long)page_directory) | 0x3);
 
    unsigned long page_table_frame_number = process_mem_pool->get_frames(1);
    unsigned long *page_table = (unsigned long *)(page_table_frame_number * PAGE_SIZE);
@@ -53,9 +56,8 @@ PageTable::PageTable()
    // attribute set to: supervisor level,
    // read/write, present(011 in binary)
    // first pde as valid pointing to page table
-   page_directory[0] = (unsigned long)page_table | 0x3;
-   // last pde as valid and pointing to first pde for recurive table look up
-   page_directory[ENTRIES_PER_PAGE - 1] = (unsigned long)page_directory | 0x3;
+   page_directory[0] = (((unsigned long)page_table) | 0x3);
+   // page_directory[ENTRIES_PER_PAGE - 1] = (((unsigned long)page_directory) | 0x3);
 
    for (unsigned int i = 1; i < ENTRIES_PER_PAGE - 1; i++)
    {
@@ -64,7 +66,6 @@ PageTable::PageTable()
       page_directory[i] = 0 | 0x2;
    }
 
-   current_page_table = this;
    vm_pool_head = NULL;
    vm_pool_current = NULL;
    Console::puts("Constructed Page Table object End\n");
@@ -74,8 +75,9 @@ PageTable::PageTable()
 void PageTable::load()
 {
     Console::puts("Loaded page table Start\n");
-   write_cr3((unsigned long)page_directory);
-   Console::puts("Loaded page table End\n");
+    current_page_table = this;
+    write_cr3((unsigned long)current_page_table->page_directory);
+    Console::puts("Loaded page table End\n");
 }
 
 void PageTable::enable_paging()
@@ -95,21 +97,36 @@ void PageTable::handle_fault(REGS * _r)
    {
       Console::puts("handle_fault err_occuured\n");
       unsigned long faulty_address = (unsigned long)(read_cr2());
+      Console::puts("faulty_address ");
+      Console::putui(faulty_address);
+      Console::puts("\n");
       unsigned long *page_directory_list = (unsigned long *)(read_cr3());
-      unsigned long directory_location = (faulty_address & 0xFFC00000) >> 22;
-      unsigned long page_location = (faulty_address & 0x003FF000) >> 12;
-      bool page_table_fault = false;
-
+      unsigned long directory_location = (faulty_address) >> 22;
+      bool is_legitimate_vm_address=false;
+      VMPool * iterartor;
+      for(iterartor =vm_pool_head;iterartor!=NULL;iterartor=iterartor->next){
+        bool temp_bool=iterartor->is_legitimate(faulty_address)==true;
+        Console::puti(temp_bool);
+        if(temp_bool){
+            is_legitimate_vm_address=true;
+            break;
+        }
+      }
+      if(!is_legitimate_vm_address && iterartor!=NULL){
+        Console::puts("Not Legitimate address\n");
+        assert(false);
+      }
       if ((page_directory_list[directory_location] & 0x1) == 0x0)
       {
          Console::puts("directory issue and new page table");
          Console::puts("\n");
-         unsigned long new_page_table_frame_number = kernel_mem_pool->get_frames(1);
+         unsigned long new_page_table_frame_number = process_mem_pool->get_frames(1);
          unsigned long *new_page_table = (unsigned long *)((new_page_table_frame_number * PAGE_SIZE));
 
+         unsigned long *page_directory_entry_addr=(unsigned long *)(0xFFFFF<<12);
          // attribute set to: supervisor level,
          // read/write, not present(010 in binary)
-         page_directory_list[directory_location] = (unsigned long)new_page_table | 0x3;
+         page_directory_entry_addr[directory_location] = (unsigned long)new_page_table | 0x3;
 
          // initializing the page table enteries
          for (unsigned int i = 0; i < ENTRIES_PER_PAGE; i++)
@@ -118,17 +135,15 @@ void PageTable::handle_fault(REGS * _r)
             // read/write, not present(010 in binary)
             new_page_table[i] = 0 | 0x2;
          }
-
-         unsigned long physical_frame_number = process_mem_pool->get_frames(1);
-         new_page_table[page_location] = (unsigned long)(physical_frame_number * PAGE_SIZE) | 0x3;
       }
       else
       {
          Console::puts("existing page table issue");
          Console::puts("\n");
-         unsigned long *existing_page_table = (unsigned long *)(page_directory_list[directory_location] & 0xFFFFF000);
+         unsigned long *existing_page_table = (unsigned long *)((0x3FF<< 22)| (directory_location<<12));
          unsigned long physical_frame_number = process_mem_pool->get_frames(1);
-         existing_page_table[page_location] = (unsigned long)(physical_frame_number * PAGE_SIZE) | 0x3;
+         unsigned long page_table_entry_location = (faulty_address & (0x03FF<<12))>>12;
+         existing_page_table[page_table_entry_location] = (unsigned long)(physical_frame_number * PAGE_SIZE) | 0x3;
       }
 
       Console::puts("resolved page fault\n");
@@ -143,55 +158,46 @@ void PageTable::handle_fault(REGS * _r)
 
 void PageTable::register_pool(VMPool * _vm_pool)
 {
-    assert(false);
+    // assert(false);
     Console::puts("registered VM pool - start\n");
     if(vm_pool_head==NULL){
+        Console::puts("Empty Head.\n");
         //if list is empty assign it to head
         vm_pool_head=_vm_pool;
-        vm_pool_current= vm_pool_head;
     }
     else{
+        Console::puts("Non Empty Head.\n");
         // if list is not empty make next point to it
         vm_pool_current->next = _vm_pool;
-        vm_pool_current=vm_pool_current->next;
     }
-    // in both cases finally current next should be null
+    // in both cases current next should be null and curent should be point to cureent _vm_pool
+    vm_pool_current= _vm_pool;
     vm_pool_current->next=NULL;
     Console::puts("registered VM pool - end\n");
 }
 
 void PageTable::free_page(unsigned long _page_no) {
-    assert(false);
+    // assert(false);
     Console::puts("freed page - start\n");
-    unsigned long addr = (unsigned long)(_page_no * PAGE_SIZE);
-    unsigned long* pte_address = (unsigned long *)PTE_address(addr);
-    if(*pte_address & 0x1){
-        unsigned long frame_no = *pte_address / PAGE_SIZE;
+    unsigned long page_directory_location = PDE_address(_page_no);
+    unsigned long page_table_location = PTE_address(_page_no);
+        unsigned long *page_directory_entry =(unsigned long *)((0x000003FF<<22)| (page_directory_location * PAGE_SIZE));
+        unsigned long frame_no = (page_directory_entry[page_table_location] & 0xFFFFF000)/ PAGE_SIZE;
         process_mem_pool->release_frames(frame_no);
-        *pte_address = 0 | 0x2;
+        page_directory_entry[page_table_location] = page_directory_entry[page_table_location] | 2;
         load();
-    }
     Console::puts("freed page - end\n");
 }
 
 
 // return the address of the PDE
-unsigned long * PageTable::PDE_address(unsigned long addr){
+unsigned long PageTable::PDE_address(unsigned long addr){
     unsigned long page_directory_location = (addr & 0xFFC00000) >> 22;
-    unsigned long* pde_address = (page_directory_location<<2) | 0XFFFFF000;
-    Console::puts("pde_address\n");
-    Console::putui(pde_address);
-    Console::puts("\n");
-    return pde_address;
+    return page_directory_location;
 }
 
 // return the address of the PTE
-unsigned long * PageTable::PTE_address(unsigned long addr){
-    unsigned long page_directory_location = (addr & 0xFFC00000) >> 22;
+unsigned long PageTable::PTE_address(unsigned long addr){
     unsigned long page_table_location = (addr & 0x003FF000) >> 12;
-    unsigned long* pte_address = (page_table_location<<12) | (page_directory_location<<2) | 0XFFC00000;
-    Console::puts("pte_address\n");
-    Console::putui(pte_address);
-    Console::puts("\n");
-    return pte_address;
+    return  page_table_location;
 }
