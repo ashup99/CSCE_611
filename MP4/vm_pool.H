@@ -54,13 +54,12 @@ private:
 
     unsigned long  base_address;
     unsigned long  size;
-    ContFramePool* frame_pool;
-    PageTable *    page_table;
+    ContFramePool  *frame_pool;
+    PageTable      *page_table;
 
-    region_data * regions;
-    unsigned long available_size;
-    unsigned long total_count;
-    unsigned long last_region_last_address;
+    region_data    *regions;
+    unsigned long  available_size;
+    unsigned long  total_count;
 
 public:
     VMPool* next=NULL;
