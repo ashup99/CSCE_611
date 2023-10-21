@@ -48,7 +48,7 @@ VMPool::VMPool(unsigned long  _base_address,
                unsigned long  _size,
                ContFramePool *_frame_pool,
                PageTable     *_page_table) {
-    // assert(false);
+    // Constructor for the VMPool class
     Console::puts("Constructed VMPool object - start.\n");
     base_address=_base_address;
     size=_size;
@@ -61,7 +61,7 @@ VMPool::VMPool(unsigned long  _base_address,
 
     page_table->register_pool(this);
 
-    // using the first pool to store region data
+    // Using the first pool to store region data
     region_data *temp_region = (region_data*) base_address;
     temp_region[0].base_addr = base_address;
     temp_region[0].size = PageTable::PAGE_SIZE;
@@ -74,7 +74,7 @@ VMPool::VMPool(unsigned long  _base_address,
 }
 
 unsigned long VMPool::allocate(unsigned long _size) {
-    // assert(false);
+    // Allocate a region of memory
     Console::puts("Allocated region of memory - start. \n");
     if(available_size<_size){
         Console::puts("No free size available.\n");
@@ -92,7 +92,7 @@ unsigned long VMPool::allocate(unsigned long _size) {
 }
 
 void VMPool::release(unsigned long _start_address) {
-    // assert(false);
+    // Release a region of memory
     Console::puts("Released region of memory - start.\n");
     unsigned long region_relase_index=-1;
     for(unsigned long i =1 ;i<total_count;i++){
@@ -123,12 +123,13 @@ void VMPool::release(unsigned long _start_address) {
         regions[region_relase_index].base_addr=regions[total_count].base_addr;
         regions[region_relase_index].size=regions[total_count].size;
     }
+    // Flushing the TLB
     page_table->load();
     Console::puts("Released region of memory - end.\n");
 }
 
 bool VMPool::is_legitimate(unsigned long _address) {
-    // assert(false);
+    // Checking whether the address is part of an allocated region
     Console::puts("Checked whether address is part of an allocated region - start.\n");
     for(unsigned long i =0; i<total_count;i++){
         if(regions[i].base_addr<=_address && regions[i].base_addr+regions[i].size>=_address){
