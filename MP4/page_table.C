@@ -100,9 +100,6 @@ void PageTable::handle_fault(REGS *_r)
     {
         Console::puts("handle_fault err_occuured\n");
         unsigned long faulty_address = (unsigned long)(read_cr2());
-        Console::puts("faulty_address ");
-        Console::putui(faulty_address);
-        Console::puts("\n");
         unsigned long *page_directory_list = (unsigned long *)(read_cr3());
         unsigned long directory_location = (faulty_address) >> 22;
         bool is_legitimate_vm_address = false;
