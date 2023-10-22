@@ -97,6 +97,10 @@ void VMPool::release(unsigned long _start_address)
 {
     // Release a region of memory
     Console::puts("Released region of memory - start.\n");
+    if(!is_legitimate(_start_address)){
+        Console::puts("Not Legitimate - start address");
+        assert(false);
+    }
     unsigned long region_relase_index = -1;
     for (unsigned long i = 1; i < total_count; i++)
     {

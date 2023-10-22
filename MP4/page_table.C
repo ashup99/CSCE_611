@@ -107,7 +107,6 @@ void PageTable::handle_fault(REGS *_r)
         for (iterartor = vm_pool_head; iterartor != NULL; iterartor = iterartor->next)
         {
             bool temp_bool = iterartor->is_legitimate(faulty_address) == true;
-            Console::puti(temp_bool);
             if (temp_bool)
             {
                 is_legitimate_vm_address = true;
@@ -138,6 +137,9 @@ void PageTable::handle_fault(REGS *_r)
                 // read/write, not present(010 in binary)
                 new_page_table[i] = 0 | 0x2;
             }
+            unsigned long physical_frame_number = process_mem_pool->get_frames(1);
+            unsigned long page_table_entry_location = (faulty_address & (0x03FF << 12)) >> 12;
+            new_page_table[page_table_entry_location] = (unsigned long)(physical_frame_number * PAGE_SIZE) | 0x3;
         }
         else
         {
