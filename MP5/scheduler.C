@@ -1,8 +1,8 @@
 /*
  File: scheduler.C
  
- Author:
- Date  :
+ Author: Ashutosh Punyani
+ Date  : Nov 5, 2023
  
  */
 
@@ -46,20 +46,25 @@
 /*--------------------------------------------------------------------------*/
 
 Scheduler::Scheduler() {
-  assert(false);
-  Console::puts("Constructed Scheduler.\n");
+  // assert(false);
+  head=NULL;
+  current=NULL;
+  Console::puts("Constructed Scheduler::Scheduler().\n");
 }
 
 void Scheduler::yield() {
-  assert(false);
+  // assert(false);
+  Console::puts("Scheduler::yield().\n");
 }
 
 void Scheduler::resume(Thread * _thread) {
-  assert(false);
+  // assert(false);
+  Console::puts("Scheduler::resume().\n");
 }
 
 void Scheduler::add(Thread * _thread) {
-  assert(false);
+  // assert(false);
+  Console::puts("Scheduler::add().\n");
 }
 
 void Scheduler::terminate(Thread * _thread) {
