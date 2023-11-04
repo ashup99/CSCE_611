@@ -68,5 +68,34 @@ void Scheduler::add(Thread * _thread) {
 }
 
 void Scheduler::terminate(Thread * _thread) {
-  assert(false);
+  // assert(false);
+  Console::puts("Scheduler::terminate().\n");
+}
+
+FIFOScheduler::FIFOScheduler() {
+  // assert(false);
+  head=NULL;
+  current=NULL;
+  Console::puts("Constructed FIFOScheduler::FIFOScheduler().\n");
+}
+
+void FIFOScqheduler::yield() {
+  // assert(false);
+  Console::puts("FIFOScheduler::yield() - start.\n");
+  Thread_List* temp=head;
+  if(head==NULL){
+    Console::puts("Empty Ready Queue\n");
+    assert(false);
+  }
+  if(head->next==NULL){
+    Console::puts("Before last Thread\n");
+  }
+  head=head->next;
+  // head->prev=NULL;
+  Console::puts("Thread Dispatched to : ");
+  Console::puti(temp->thread->ThreadId()+1);
+  Console::puts("\n");
+  Thread::dispatch_to(temp->thread);
+  MEMORY_POOL->release((unsigned long)temp);
+  Console::puts("FIFOScheduler::yield() - end.\n");
 }
