@@ -80,7 +80,7 @@ FIFOScheduler::FIFOScheduler() {
   Console::puts("Constructed FIFOScheduler::FIFOScheduler().\n");
 }
 
-void FIFOScqheduler::yield() {
+void FIFOScheduler::yield() {
   // assert(false);
   Console::puts("FIFOScheduler::yield() - start.\n");
   Thread_List* temp=head;
