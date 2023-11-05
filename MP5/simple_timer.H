@@ -67,4 +67,28 @@ public :
 
 };
 
+class EOQTimer : public SimpleTimer {
+
+
+public :
+
+  EOQTimer(int _hz);
+  /* Initialize the end of quantum timer, and set its frequency. */
+
+  void handle_interrupt(REGS *_r);
+  /* This must be installed as the interrupt handler for the timer 
+     when the system gets initialized. (e.g. in "kernel.C")  
+  */
+
+  void reset_timer_counter();
+  /*
+    reset the timer when thread is yielded or time quantum is over
+  */
+
+  int get_timer_counter();
+  /*
+    get the timer counter
+  */
+};
+
 #endif
