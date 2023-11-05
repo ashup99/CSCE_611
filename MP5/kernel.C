@@ -39,6 +39,9 @@
    Otherwise, the thread functions don't return, and the threads run forever.
 */
 
+#define _FIFO_SCHEDULER_
+// #define _RR_SCHEDULER_
+
 /*--------------------------------------------------------------------------*/
 /* INCLUDES */
 /*--------------------------------------------------------------------------*/
@@ -104,6 +107,18 @@ void operator delete[] (void * p) {
 
 /* -- A POINTER TO THE SYSTEM SCHEDULER */
 Scheduler * SYSTEM_SCHEDULER;
+
+#endif
+
+#ifdef _RR_SCHEDULER_
+
+EOQTimer * timer;
+
+#endif
+
+#ifdef _FIFO_SCHEDULER_
+
+SimpleTimer * timer;
 
 #endif
 
@@ -250,9 +265,15 @@ int main() {
     /* Question: Why do we want a timer? We have it to make sure that 
                  we enable interrupts correctly. If we forget to do it,
                  the timer "dies". */
+#ifdef _FIFO_SCHEDULER_
+  timer = new SimpleTimer(100); /* timer ticks every 10ms. */
+#endif
 
-    SimpleTimer timer(100); /* timer ticks every 10ms. */
-    InterruptHandler::register_handler(0, &timer);
+#ifdef _RR_SCHEDULER_
+  timer =new EOQTimer(100); /* timer ticks every 10ms. */
+#endif
+  
+    InterruptHandler::register_handler(0, timer);
     /* The Timer is implemented as an interrupt handler. */
 
 #ifdef _USES_SCHEDULER_
@@ -260,7 +281,13 @@ int main() {
     /* -- SCHEDULER -- IF YOU HAVE ONE -- */
  
     // SYSTEM_SCHEDULER = new Scheduler();
+    #ifdef _FIFO_SCHEDULER_
     SYSTEM_SCHEDULER = new FIFOScheduler();
+#endif
+
+#ifdef _RR_SCHEDULER_
+    SYSTEM_SCHEDULER = new RRScheduler();
+#endif
 
 #endif
 
@@ -270,9 +297,9 @@ int main() {
              would get a lot of uncaptured interrupts otherwise. */ 
 
     /* -- ENABLE INTERRUPTS -- */
-
+#ifdef _FIFO_SCHEDULER_
     Machine::enable_interrupts();
-
+#endif
     /* -- MOST OF WHAT WE NEED IS SETUP. THE KERNEL CAN START. */
 
     Console::puts("Hello World!\n");
@@ -307,6 +334,9 @@ int main() {
     SYSTEM_SCHEDULER->add(thread3);
     SYSTEM_SCHEDULER->add(thread4);
 
+#endif
+    #ifdef _RR_SCHEDULER_
+    Machine::enable_interrupts();
 #endif
 
     /* -- KICK-OFF THREAD1 ... */

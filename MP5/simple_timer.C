@@ -24,6 +24,9 @@
 #include "console.H"
 #include "interrupts.H"
 #include "simple_timer.H"
+#include "scheduler.H"
+
+extern Scheduler *SYSTEM_SCHEDULER;
 
 /*--------------------------------------------------------------------------*/
 /* CONSTRUCTOR */
@@ -97,4 +100,54 @@ void SimpleTimer::wait(unsigned long _seconds) {
     while((seconds <= then_seconds) && (ticks < now_ticks));
 }
 
+
+/*--------------------------------------------------------------------------*/
+/* METHODS FOR CLASS   EOQ Timer */
+/*--------------------------------------------------------------------------*/
+EOQTimer::EOQTimer(int _hz): SimpleTimer(_hz){
+/* How long has the system been running? */
+Console::puts("EOQTimer Constructor - Start\n");
+hz=_hz;
+Console::puts("EOQTimer Constructor - End\n");
+}
+
+void EOQTimer::handle_interrupt(REGS *_r) {
+/* What to do when timer interrupt occurs? In this case, we update "ticks",
+   and maybe update "seconds".
+   This must be installed as the interrupt handler for the timer in the 
+   when the system gets initialized. (e.g. in "kernel.C") */
+
+    /* Increment our "ticks" count */
+    ticks++;
+
+    /*
+    qunatum is 50 ms
+    1 s =1000 ms
+    which  means 50 ms = hz/20 
+    Whenever a second is over, we update counter accordingly. 
+    */
+    if (ticks >= hz/20 )
+    {
+        ((RRScheduler*) SYSTEM_SCHEDULER)->quantum_manager();
+        reset_timer_counter();
+        Console::puts("Quantum has passed\n");
+    }
+}
+    void EOQTimer::reset_timer_counter()
+    {
+  /*
+    reset the timer when thread is yielded or time quantum is over
+  */
+        ticks =0;
+        }
+
+  int EOQTimer::get_timer_counter()
+  {
+
+  /*
+    get the timer counter
+  */
+    return ticks;
+
+  }
 

@@ -141,6 +141,9 @@ public:
 
    class RRScheduler : public Scheduler {
 
+   private:
+      bool quantum_passed;
+
    public:
 
       // constructor
@@ -166,6 +169,11 @@ public:
       /* Remove the given thread from the scheduler in preparation for destruction
          of the thread. 
          Graciously handle the case where the thread wants to terminate itself.*/
+
+      void quantum_manager();
+      /*
+      Manages whenever quantum has been passed.
+      */
    
    };
 
