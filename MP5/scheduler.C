@@ -83,6 +83,10 @@ FIFOScheduler::FIFOScheduler() {
 
 void FIFOScheduler::yield() {
   // assert(false);
+  if(Machine::interrupts_enabled()){
+    Console::puts("Interrupts Disabled.\n");
+    Machine::disable_interrupts();
+  }
   Console::puts("FIFOScheduler::yield() - start.\n");
   Thread_List* temp=head;
   if(head==NULL){
@@ -93,17 +97,25 @@ void FIFOScheduler::yield() {
     Console::puts("Before last Thread\n");
   }
   head=head->next;
-  // head->prev=NULL;
+  head->prev=NULL;
   Console::puts("Thread Dispatched to : ");
   Console::puti(temp->thread->ThreadId()+1);
   Console::puts("\n");
   Thread::dispatch_to(temp->thread);
   MEMORY_POOL->release((unsigned long)temp);
   Console::puts("FIFOScheduler::yield() - end.\n");
+ if(!Machine::interrupts_enabled()){
+    Console::puts("Interrupts Enabled.\n");
+    Machine::enable_interrupts();
+  }
 }
 
 void FIFOScheduler::add(Thread * _thread) {
   // assert(false);
+  if(Machine::interrupts_enabled()){
+    Console::puts("Interrupts Disabled.\n");
+    Machine::disable_interrupts();
+  }
   Console::puts("FIFOScheduler::add() - start.\n");
   Thread_List* new_thread = (Thread_List*)(MEMORY_POOL->allocate(sizeof(Thread_List)));
   new_thread->thread=_thread;
@@ -122,6 +134,10 @@ void FIFOScheduler::add(Thread * _thread) {
   Console::puti(_thread->ThreadId()+1);
   Console::puts("\n");
   Console::puts("FIFOScheduler::add() - end.\n");
+  if(!Machine::interrupts_enabled()){
+    Console::puts("Interrupts Enabled.\n");
+    Machine::enable_interrupts();
+  }
 }
 
 void FIFOScheduler::resume(Thread * _thread) {
@@ -136,6 +152,10 @@ void FIFOScheduler::resume(Thread * _thread) {
 
 void FIFOScheduler::terminate(Thread * _thread) {
   // assert(false);
+  if(Machine::interrupts_enabled()){
+    Console::puts("Interrupts Disabled.\n");
+    Machine::disable_interrupts();
+  }
   Console::puts("FIFOScheduler::terminate() - start.\n");
   if(Thread::CurrentThread()==_thread){
     yield();
@@ -166,4 +186,8 @@ void FIFOScheduler::terminate(Thread * _thread) {
   Console::puti(_thread->ThreadId()+1);
   Console::puts("\n");
   Console::puts("FIFOScheduler::terminate() - end.\n");
+  if(!Machine::interrupts_enabled()){
+    Console::puts("Interrupts Enabled.\n");
+    Machine::enable_interrupts();
+  }
 }
