@@ -123,3 +123,42 @@ void FIFOScheduler::add(Thread * _thread) {
   Console::puts("FIFOScheduler::add() - end.\n");
 }
 
+void FIFOScheduler::resume(Thread * _thread) {
+  // assert(false);
+  Console::puts("FIFOScheduler::resume() - start.\n");
+  add(_thread);
+  Console::puts("Thread Resume:");
+  Console::putui(_thread->ThreadId()+1);
+  Console::puts("\n");
+  Console::puts("FIFOScheduler::resume() - end.\n");
+}
+
+void FIFOScheduler::terminate(Thread * _thread) {
+  // assert(false);
+  Console::puts("FIFOScheduler::terminate() - start.\n");
+  if(Thread::CurrentThread()==_thread){
+    yield();
+  }
+  else if (head->thread==_thread){
+    head=head->next;
+    head->prev=NULL;
+  }
+  else{
+    Thread_List* itr =head;    
+     for(itr=head;itr->next->thread!=_thread;itr=itr->next)
+     {
+
+     }
+
+    Thread_List* n_temp = itr->next;    
+    Thread_List* p_temp = itr->prev;    
+    itr->next=n_temp->next;
+    itr->prev=p_temp->prev;
+
+  MEMORY_POOL->release((unsigned long)n_temp);
+  }
+  Console::puts("Thread Terminated : ");
+  Console::puti(_thread->ThreadId()+1);
+  Console::puts("\n");
+  Console::puts("FIFOScheduler::terminate() - end.\n");
+}
