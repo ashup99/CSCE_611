@@ -87,6 +87,7 @@ static void thread_shutdown() {
     Console::puts(" Thread ID is to be shutdown.\n");
     SYSTEM_SCHEDULER->terminate(temp);
     MEMORY_POOL->release((unsigned long)temp);
+    SYSTEM_SCHEDULER->yield();
     Console::puts("Thread Shutdown - End.\n");
 
     /* Let's not worry about it for now. 

@@ -75,9 +75,10 @@ void Scheduler::terminate(Thread * _thread) {
 
 FIFOScheduler::FIFOScheduler() {
   // assert(false);
+  Console::puts("Constructed FIFOScheduler::FIFOScheduler() - start.\n");
   head=NULL;
   current=NULL;
-  Console::puts("Constructed FIFOScheduler::FIFOScheduler().\n");
+  Console::puts("Constructed FIFOScheduler::FIFOScheduler() - end.\n");
 }
 
 void FIFOScheduler::yield() {
@@ -150,12 +151,16 @@ void FIFOScheduler::terminate(Thread * _thread) {
 
      }
 
+     if(itr!=NULL){
+
     Thread_List* n_temp = itr->next;    
     Thread_List* p_temp = itr->prev;    
     itr->next=n_temp->next;
     itr->prev=p_temp->prev;
 
   MEMORY_POOL->release((unsigned long)n_temp);
+  MEMORY_POOL->release((unsigned long)p_temp);
+     }
   }
   Console::puts("Thread Terminated : ");
   Console::puti(_thread->ThreadId()+1);
