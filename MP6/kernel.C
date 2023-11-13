@@ -19,7 +19,7 @@
 
 /* -- COMMENT/UNCOMMENT THE FOLLOWING LINE TO EXCLUDE/INCLUDE SCHEDULER CODE */
 
-//#define _USES_SCHEDULER_
+#define _USES_SCHEDULER_
 /* This macro is defined when we want to force the code below to use 
    a scheduler.
    Otherwise, no scheduler is used, and the threads pass control to each 
@@ -180,8 +180,10 @@ void fun2() {
 
        /* -- Display */
        for (int i = 0; i < DISK_BLOCK_SIZE; i++) {
-           Console::putch(buf[i]);
+           // Console::putch(buf[i]);
+           Console::puts((char *)buf[i]);
        }
+       Console::puts("\n");
 
        Console::puts("Writing a block to disk...\n");
        SYSTEM_DISK->write(write_block, buf); 
@@ -313,8 +315,8 @@ int main() {
     Console::puts("DONE\n");
 
     Console::puts("CREATING THREAD 2...");
-    char * stack2 = new char[1024];
-    thread2 = new Thread(fun2, stack2, 1024);
+    char * stack2 = new char[4096];
+    thread2 = new Thread(fun2, stack2, 4096);
     Console::puts("DONE\n");
 
     Console::puts("CREATING THREAD 3...");
