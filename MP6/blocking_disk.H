@@ -1,9 +1,9 @@
 /*
      File        : blocking_disk.H
 
-     Author      : 
-
-     Date        : 
+     Author      : Ashutosh Punyani
+     Modified    : November 13, 2023
+      
      Description : 
 
 */
@@ -22,6 +22,10 @@
 /*--------------------------------------------------------------------------*/
 
 #include "simple_disk.H"
+#include "mem_pool.H"  
+#include "thread.H"  
+
+extern MemPool *MEMORY_POOL;
 
 /*--------------------------------------------------------------------------*/
 /* DATA STRUCTURES */ 
@@ -34,6 +38,10 @@
 /*--------------------------------------------------------------------------*/
 
 class BlockingDisk : public SimpleDisk {
+
+protected:
+ virtual void wait_until_ready();
+     /* Is called after each read/write operation to check whether the disk is ready to start transfering the data from/to the disk. */
 public:
    BlockingDisk(DISK_ID _disk_id, unsigned int _size); 
    /* Creates a BlockingDisk device with the given size connected to the 
@@ -51,6 +59,9 @@ public:
    virtual void write(unsigned long _block_no, unsigned char * _buf);
    /* Writes 512 Bytes from the buffer to the given block on the disk. */
 
+   virtual bool is_ready_blocked();
+     /* Return true if disk is ready to transfer data from/to disk, false otherwise. */
+    
 };
 
 #endif
