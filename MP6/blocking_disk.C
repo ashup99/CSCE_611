@@ -25,6 +25,32 @@
 #include "scheduler.H"
 
 extern Scheduler* SYSTEM_SCHEDULER;
+/*--------------------------------------------------------------------------*/
+/* THREAD SAFE DISK SYSTEM IMPLMENTATION*/
+/*--------------------------------------------------------------------------*/
+
+
+int isLocked;
+int TestAndSet(int *isLocked,int new_lock_state) 
+{
+    int previous_state = *isLocked;
+    *isLocked = new_lock_state;
+    return previous_state;
+}
+
+void initialize_lock(int *isLocked) {
+    *isLocked = 0;
+}
+
+void acquire_lock() {
+    while (TestAndSet(&isLocked, 1));
+}
+
+void release_lock() {
+    isLocked = 0;
+}
+
+
 
 /*--------------------------------------------------------------------------*/
 /* CONSTRUCTOR */
@@ -33,6 +59,7 @@ extern Scheduler* SYSTEM_SCHEDULER;
 BlockingDisk::BlockingDisk(DISK_ID _disk_id, unsigned int _size) 
   : SimpleDisk(_disk_id, _size) {
   Console::puts("Constructed BlockingDisk::BlockingDisk() - start.\n");
+  initialize_lock(&isLocked);
   Console::puts("Constructed BlockingDisk::BlockingDisk() - end.\n");
 }
 
@@ -41,16 +68,19 @@ BlockingDisk::BlockingDisk(DISK_ID _disk_id, unsigned int _size)
 /*--------------------------------------------------------------------------*/
 
 void BlockingDisk::read(unsigned long _block_no, unsigned char * _buf) {
+  acquire_lock();
   Console::puts("BlockingDisk::read() - start.\n");
   SimpleDisk::read(_block_no, _buf);
   Console::puts("BlockingDisk::read() - end.\n");
-
+  release_lock();
 }
 
 void BlockingDisk::write(unsigned long _block_no, unsigned char * _buf) {
+  acquire_lock();
   Console::puts("BlockingDisk::write() - start.\n");
   SimpleDisk::write(_block_no, _buf);
   Console::puts("BlockingDisk::write() - end.\n");
+  release_lock();
 }
 
 bool BlockingDisk::is_ready_blocked(){
