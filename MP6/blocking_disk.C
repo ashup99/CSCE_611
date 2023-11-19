@@ -4,7 +4,7 @@
      Author      : Ashutosh Punyani
      Modified    : November 13, 2023
 
-     Description : 
+     Description :
 
 */
 
@@ -12,7 +12,7 @@
 /* DEFINES */
 /*--------------------------------------------------------------------------*/
 
-    /* -- (none) -- */
+/* -- (none) -- */
 
 /*--------------------------------------------------------------------------*/
 /* INCLUDES */
@@ -24,40 +24,42 @@
 #include "blocking_disk.H"
 #include "scheduler.H"
 
-extern Scheduler* SYSTEM_SCHEDULER;
+extern Scheduler *SYSTEM_SCHEDULER;
 /*--------------------------------------------------------------------------*/
 /* THREAD SAFE DISK SYSTEM IMPLMENTATION*/
 /*--------------------------------------------------------------------------*/
 
-
 int isLocked;
-int TestAndSet(int *isLocked,int new_lock_state) 
+int TestAndSet(int *isLocked, int new_lock_state)
 {
-    int previous_state = *isLocked;
-    *isLocked = new_lock_state;
-    return previous_state;
+  int previous_state = *isLocked;
+  *isLocked = new_lock_state;
+  return previous_state;
 }
 
-void initialize_lock(int *isLocked) {
-    *isLocked = 0;
+void initialize_lock(int *isLocked)
+{
+  *isLocked = 0;
 }
 
-void acquire_lock() {
-    while (TestAndSet(&isLocked, 1));
+void acquire_lock()
+{
+  while (TestAndSet(&isLocked, 1))
+    ;
 }
 
-void release_lock() {
-    isLocked = 0;
+void release_lock()
+{
+  isLocked = 0;
 }
-
-
 
 /*--------------------------------------------------------------------------*/
 /* CONSTRUCTOR */
 /*--------------------------------------------------------------------------*/
 
-BlockingDisk::BlockingDisk(DISK_ID _disk_id, unsigned int _size) 
-  : SimpleDisk(_disk_id, _size) {
+BlockingDisk::BlockingDisk(DISK_ID _disk_id, unsigned int _size)
+    : SimpleDisk(_disk_id, _size)
+{
   Console::puts("Constructed BlockingDisk::BlockingDisk() - start.\n");
   initialize_lock(&isLocked);
   Console::puts("Constructed BlockingDisk::BlockingDisk() - end.\n");
@@ -67,7 +69,8 @@ BlockingDisk::BlockingDisk(DISK_ID _disk_id, unsigned int _size)
 /* SIMPLE_DISK FUNCTIONS */
 /*--------------------------------------------------------------------------*/
 
-void BlockingDisk::read(unsigned long _block_no, unsigned char * _buf) {
+void BlockingDisk::read(unsigned long _block_no, unsigned char *_buf)
+{
   acquire_lock();
   Console::puts("BlockingDisk::read() - start.\n");
   SimpleDisk::read(_block_no, _buf);
@@ -75,7 +78,8 @@ void BlockingDisk::read(unsigned long _block_no, unsigned char * _buf) {
   release_lock();
 }
 
-void BlockingDisk::write(unsigned long _block_no, unsigned char * _buf) {
+void BlockingDisk::write(unsigned long _block_no, unsigned char *_buf)
+{
   acquire_lock();
   Console::puts("BlockingDisk::write() - start.\n");
   SimpleDisk::write(_block_no, _buf);
@@ -83,12 +87,15 @@ void BlockingDisk::write(unsigned long _block_no, unsigned char * _buf) {
   release_lock();
 }
 
-bool BlockingDisk::is_ready_blocked(){
+bool BlockingDisk::is_ready_blocked()
+{
   return SimpleDisk::is_ready();
 }
 
-void BlockingDisk::wait_until_ready(){
-  while(!SimpleDisk::is_ready()){
+void BlockingDisk::wait_until_ready()
+{
+  while (!SimpleDisk::is_ready())
+  {
     SYSTEM_SCHEDULER->resume(Thread::CurrentThread());
     SYSTEM_SCHEDULER->yield();
   }
