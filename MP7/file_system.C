@@ -12,7 +12,10 @@
 /* DEFINES */
 /*--------------------------------------------------------------------------*/
 
-    /* -- (none) -- */
+#define INODES_INDEX 0
+#define FREELIST_INDEX 1
+#define USED 'u'
+#define FREE 'f'
 
 /*--------------------------------------------------------------------------*/
 /* INCLUDES */
@@ -38,14 +41,23 @@
 /*--------------------------------------------------------------------------*/
 
 FileSystem::FileSystem() {
+    Console::puts("FileSystem - start\n");
     Console::puts("In file system constructor.\n");
-    assert(false);
+    size=0;
+    disk = NULL;
+    inodes=new Inode[MAX_INODES];
+    free_blocks= new unsigned char[MAX_FREE_BLOCKS];
+    Console::puts("FileSystem - end\n");
+    // assert(false);
 }
 
 FileSystem::~FileSystem() {
+    Console::puts("~FileSystem - start\n");
     Console::puts("unmounting file system\n");
     /* Make sure that the inode list and the free list are saved. */
-    assert(false);
+    
+    Console::puts("~FileSystem - end\n");
+    // assert(false);
 }
 
 
