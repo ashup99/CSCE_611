@@ -55,7 +55,11 @@ FileSystem::~FileSystem() {
     Console::puts("~FileSystem - start\n");
     Console::puts("unmounting file system\n");
     /* Make sure that the inode list and the free list are saved. */
-    
+    WriteToDisk(INODES_INDEX, (unsigned char*)inodes);
+    WriteToDisk(FREELIST_INDEX, free_blocks);
+    disk=NULL;
+    delete []inodes;
+    delete []free_blocks;
     Console::puts("~FileSystem - end\n");
     // assert(false);
 }
@@ -65,10 +69,53 @@ FileSystem::~FileSystem() {
 /* FILE SYSTEM FUNCTIONS */
 /*--------------------------------------------------------------------------*/
 
+void FileSystem::ReadFromDisk(unsigned long _block_no, unsigned char *_buf){
+    disk->read(_block_no,_buf);
+}
+
+void FileSystem::WriteToDisk(unsigned long _block_no, unsigned char *_buf){
+    disk->write(_block_no,_buf);
+}
+
+unsigned long FileSystem::GetFreeBlock(){
+    Console::puts("GetFreeBlock - start\n");
+    unsigned long free_block_no=MAX_FREE_BLOCKS;
+    for(int itr=0;itr<MAX_FREE_BLOCKS;itr++){
+        if(free_blocks[itr]==FREE){
+            free_blocks[itr] = USED;
+            free_block_no=itr;
+            break;
+        }
+    }
+    if(free_block_no!=MAX_FREE_BLOCKS){
+        Console::puts("Found a free block at: ");
+         Console::puti(free_block_no); 
+            Console::puts("\n"); 
+    }
+
+    Console::puts("GetFreeBlock - end\n");
+    return free_block_no;
+}
+
+Inode* FileSystem::GetFreeInode(){
+    Console::puts("GetFreeInode - start\n");
+
+    Inode *free_inode=NULL;
+    for(int itr=0;itr<MAX_INODES;itr++){
+        if(inodes[itr].is_inode_free){
+            inodes[itr].is_inode_free=false;
+            free_inode=&inodes[itr];
+            break;
+        }
+    }
+    if(free_inode!=NULL){
+        Console::puts("Found a free inode\n");
+    }
+    Console::puts("GetFreeInode - end\n");
+    return free_inode;
+}
 
 bool FileSystem::Mount(SimpleDisk * _disk) {
-    Console::puts("mounting file system from disk\n");
-
     /* Here you read the inode list and the free list into memory */
     
     assert(false);
@@ -83,9 +130,29 @@ bool FileSystem::Format(SimpleDisk * _disk, unsigned int _size) { // static!
 }
 
 Inode * FileSystem::LookupFile(int _file_id) {
-    Console::puts("looking up file with id = "); Console::puti(_file_id); Console::puts("\n");
+    Console::puts("LookupFile - start\n"); 
+    Console::puts("looking up file with id = "); 
+    Console::puti(_file_id); 
+    Console::puts("\n");
     /* Here you go through the inode list to find the file. */
-    assert(false);
+    Inode *inode_found = NULL;
+    int found=0;
+    for(int itr=0;itr<MAX_INODES;itr++){
+        if(inodes[itr].id==_file_id && !inodes[itr].is_inode_free){
+            Console::puts("Inode Found For: ");
+             Console::puti(_file_id); 
+            Console::puts("\n"); 
+            inode_found= &inodes[itr];
+            found=1;
+            break;
+        }
+    }
+    if(inode_found!=NULL){
+        Console::puts("Found a inode for the given file id\n");
+    }
+    Console::puts("LookupFile - end\n"); 
+    return inode_found;
+    // assert(false);
 }
 
 bool FileSystem::CreateFile(int _file_id) {
