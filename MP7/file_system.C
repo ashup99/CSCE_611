@@ -33,6 +33,25 @@
    inodes from and to disk. */
 
 /*--------------------------------------------------------------------------*/
+
+
+/*--------------------------------------------------------------------------*/
+/* INODE FUNCTIONS */
+/*--------------------------------------------------------------------------*/
+
+void Inode::init(FileSystem* _fs, long _file_id, unsigned long _block_no){
+    fs=_fs;
+    id=_file_id;
+    block_no=_block_no;
+    is_inode_free=false;
+    file_size=0;
+}
+
+void Inode::updateInodesList(){
+    fs->WriteToDisk(INODES_INDEX,(unsigned char*)fs->inodes);
+}
+
+/*--------------------------------------------------------------------------*/
 /* CLASS FileSystem */
 /*--------------------------------------------------------------------------*/
 
@@ -117,16 +136,42 @@ Inode* FileSystem::GetFreeInode(){
 
 bool FileSystem::Mount(SimpleDisk * _disk) {
     /* Here you read the inode list and the free list into memory */
-    
-    assert(false);
+    Console::puts("Mount - start\n");
+    Console::puts("mounting file system from disk\n");
+    if(disk!=NULL){
+        Console::puts("Disk is already mounted\n");
+        Console::puts("Mount - end\n");
+        return false;
+    }
+    disk=_disk;
+    ReadFromDisk(INODES_INDEX, (unsigned char*)inodes);
+    ReadFromDisk(FREELIST_INDEX, free_blocks);
+    Console::puts("Mount - end\n");
+    return true;
+    // assert(false);
 }
 
 bool FileSystem::Format(SimpleDisk * _disk, unsigned int _size) { // static!
+    Console::puts("Format - start\n");
     Console::puts("formatting disk\n");
     /* Here you populate the disk with an initialized (probably empty) inode list
        and a free list. Make sure that blocks used for the inodes and for the free list
        are marked as used, otherwise they may get overwritten. */
-    assert(false);
+    Inode * temp_inodes = new Inode[MAX_INODES];
+    for(int itr=0;itr<MAX_INODES;itr++)
+        temp_inodes[itr].is_inode_free=true;
+    _disk->write(INODES_INDEX, (unsigned char*)temp_inodes);
+
+    unsigned char* temp_free_blocks= new unsigned char[MAX_FREE_BLOCKS];   
+    temp_free_blocks[INODES_INDEX]=USED;
+    temp_free_blocks[FREELIST_INDEX]=USED;
+    for(int itr=2;itr<MAX_FREE_BLOCKS;itr++)
+        temp_free_blocks[itr]=FREE;
+    _disk->write(FREELIST_INDEX, (unsigned char*)temp_free_blocks);
+    delete []temp_inodes;
+    delete []temp_free_blocks;
+    Console::puts("Format - end\n");
+    return true;
 }
 
 Inode * FileSystem::LookupFile(int _file_id) {
@@ -156,16 +201,75 @@ Inode * FileSystem::LookupFile(int _file_id) {
 }
 
 bool FileSystem::CreateFile(int _file_id) {
-    Console::puts("creating file with id:"); Console::puti(_file_id); Console::puts("\n");
+    Console::puts("CreateFile - start\n"); 
+    Console::puts("creating file with id: "); 
+    Console::puti(_file_id); 
+    Console::puts("\n");
     /* Here you check if the file exists already. If so, throw an error.
        Then get yourself a free inode and initialize all the data needed for the
        new file. After this function there will be a new file on disk. */
-    assert(false);
+    // assert(false);
+
+    if(LookupFile(_file_id)){
+        Console::puts("File Already Exists for: ");
+        Console::puti(_file_id); 
+        Console::puts("\n");    
+        Console::puts("CreateFile - end\n"); 
+        return false;
+    }
+
+    Inode *free_inode= GetFreeInode();
+    unsigned long  block_no=GetFreeBlock();
+    if(free_inode!=NULL && block_no!=MAX_FREE_BLOCKS){
+        free_inode->init(this,_file_id,block_no);
+        WriteToDisk(INODES_INDEX, (unsigned char*) inodes);
+        WriteToDisk(FREELIST_INDEX, free_blocks);
+        Console::puts("File Created SuccessFully For: ");
+        Console::puti(_file_id); 
+        Console::puts("\n");   
+        Console::puts("CreateFile - end\n"); 
+        return true;
+    }
+    else{
+        if(free_inode!=NULL)
+            free_inode->is_inode_free=true;
+        if(block_no!=MAX_FREE_BLOCKS)
+            free_blocks[block_no]=FREE;
+        Console::puts("File Creation Failed for: ");
+        Console::puti(_file_id); 
+        Console::puts("\n");    
+        Console::puts("CreateFile - end\n"); 
+        return false;
+    }
 }
 
 bool FileSystem::DeleteFile(int _file_id) {
-    Console::puts("deleting file with id:"); Console::puti(_file_id); Console::puts("\n");
+    Console::puts("DeleteFile - start\n"); 
+    Console::puts("deleting file with id: "); 
+    Console::puti(_file_id); 
+    Console::puts("\n");
     /* First, check if the file exists. If not, throw an error. 
        Then free all blocks that belong to the file and delete/invalidate 
        (depending on your implementation of the inode list) the inode. */
+    // assert(false);
+
+    Inode * inode_found =LookupFile(_file_id);
+    if(inode_found==NULL){
+        Console::puts("File Does not Exists for: ");
+        Console::puti(_file_id); 
+        Console::puts("\n");    
+        Console::puts("DeleteFile - end\n"); 
+        return false;
+    }
+    inode_found->is_inode_free=true;
+    unsigned long block_no= inode_found->block_no;
+    free_blocks[block_no]=FREE;
+    WriteToDisk(INODES_INDEX, (unsigned char*) inodes);
+    WriteToDisk(FREELIST_INDEX, free_blocks);
+    Console::puts("File Deleted ");
+    Console::puti(_file_id); 
+    Console::puts("\n");    
+    Console::puts("DeleteFile - end\n"); 
+    return true;
 }
+

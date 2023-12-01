@@ -58,6 +58,9 @@ private:
 
   /* You may need a few additional functions to help read and store the 
      inodes from and to disk. */
+  void init(FileSystem* _fs, long _file_id, unsigned long _block_no);
+
+  void updateInodesList();
 };
 
 /*--------------------------------------------------------------------------*/
@@ -101,6 +104,7 @@ private:
      blocks. These functions also come useful to class Inode and File. */
 
 public:
+  static const unsigned int MAX_FILE_SIZE = SimpleDisk::BLOCK_SIZE * 128;
   FileSystem();
   /* Just initializes local data structures. Does not connect to disk yet. */
 
