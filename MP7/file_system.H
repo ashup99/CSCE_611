@@ -1,4 +1,4 @@
-/* 
+/*
     File: file_system.H
 
     Author: R. Bettati
@@ -7,7 +7,7 @@
     Date  : 21/11/28
 
     Description: Simple File System.
-    
+
 
 */
 
@@ -46,14 +46,14 @@ private:
   long id; // File "name"
   unsigned long file_size;
   bool is_inode_free;
-  #ifdef _LARGE_FILE_
+#ifdef _LARGE_FILE_
   unsigned long number_of_blocks;
   unsigned long index_block_no;
-  #else
+#else
   unsigned long block_no;
-  #endif
+#endif
 
-  /* You will need additional information in the inode, such as allocation 
+  /* You will need additional information in the inode, such as allocation
      information. */
 
   FileSystem *fs; // It may be handy to have a pointer to the File system.
@@ -61,15 +61,15 @@ private:
                   // to load or save the inode list. (Depends on your
                   // implementation.)
 
-  /* You may need a few additional functions to help read and store the 
+  /* You may need a few additional functions to help read and store the
      inodes from and to disk. */
-   
-    #ifdef _LARGE_FILE_
+
+#ifdef _LARGE_FILE_
   unsigned long getAndWriteFreeBlock();
-  void init(FileSystem* _fs, long _file_id, unsigned long _index_block_no);
-    #else
-  void init(FileSystem* _fs, long _file_id, unsigned long _block_no);
-  #endif
+  void init(FileSystem *_fs, long _file_id, unsigned long _index_block_no);
+#else
+  void init(FileSystem *_fs, long _file_id, unsigned long _block_no);
+#endif
 
   void updateInodesList();
 };
@@ -102,13 +102,13 @@ private:
   /* The inode list */
 
   unsigned char *free_blocks;
-  /* The free-block list. You may want to implement the "list" as a bitmap. 
-     Feel free to use an unsigned char to represent whether a block is free or not; 
-     no need to go to bits if you don't want to. 
-     If you reserve one block to store the "free list", you can handle a file system up to 
+  /* The free-block list. You may want to implement the "list" as a bitmap.
+     Feel free to use an unsigned char to represent whether a block is free or not;
+     no need to go to bits if you don't want to.
+     If you reserve one block to store the "free list", you can handle a file system up to
      256kB. (Large enough as a proof of concept.) */
-     
-  Inode* GetFreeInode();
+
+  Inode *GetFreeInode();
   unsigned long GetFreeBlock();
   /* It may be helpful to two functions to hand out free inodes in the inode list and free
      blocks. These functions also come useful to class Inode and File. */
@@ -130,7 +130,7 @@ public:
   /* Wipes any file system from the disk and installs an empty file system of given size. */
 
   Inode *LookupFile(int _file_id);
-  /* Find file with given id in file system. If found, return its inode. 
+  /* Find file with given id in file system. If found, return its inode.
        Otherwise, return null. */
 
   bool CreateFile(int _file_id);
