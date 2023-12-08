@@ -16,6 +16,8 @@
 #define FREELIST_INDEX 1
 #define USED 'u'
 #define FREE 'f'
+// #define _LARGE_FILE_
+
 
 /*--------------------------------------------------------------------------*/
 /* INCLUDES */
@@ -38,18 +40,40 @@
 /*--------------------------------------------------------------------------*/
 /* INODE FUNCTIONS */
 /*--------------------------------------------------------------------------*/
-
+#ifdef _LARGE_FILE_
+void Inode::init(FileSystem* _fs, long _file_id, unsigned long _index_block_no){
+    Console::puts("Large Files Inode Init\n");
+    fs=_fs;
+    id=_file_id;
+    index_block_no=_index_block_no;
+    is_inode_free=false;
+    file_size=0;
+    number_of_blocks=1;
+}
+#else
 void Inode::init(FileSystem* _fs, long _file_id, unsigned long _block_no){
+    Console::puts("Small Files Inode Init\n");
     fs=_fs;
     id=_file_id;
     block_no=_block_no;
     is_inode_free=false;
     file_size=0;
 }
+#endif
 
 void Inode::updateInodesList(){
     fs->WriteToDisk(INODES_INDEX,(unsigned char*)fs->inodes);
 }
+
+#ifdef _LARGE_FILE_
+unsigned long Inode::getAndWriteFreeBlock(){
+    unsigned long data_block_no=fs->GetFreeBlock();
+    if(data_block_no!=FileSystem::MAX_FREE_BLOCKS){
+        fs->WriteToDisk(FREELIST_INDEX,fs->free_blocks);
+    }
+    return data_block_no;
+}
+#endif
 
 /*--------------------------------------------------------------------------*/
 /* CLASS FileSystem */
@@ -209,15 +233,47 @@ bool FileSystem::CreateFile(int _file_id) {
        Then get yourself a free inode and initialize all the data needed for the
        new file. After this function there will be a new file on disk. */
     // assert(false);
-
-    if(LookupFile(_file_id)){
+    Inode * inode_found =LookupFile(_file_id);
+    if(inode_found!=NULL){
         Console::puts("File Already Exists for: ");
         Console::puti(_file_id); 
         Console::puts("\n");    
         Console::puts("CreateFile - end\n"); 
         return false;
     }
+    #ifdef _LARGE_FILE_
+    Inode *free_inode= GetFreeInode();
+    unsigned long  index_block_no=GetFreeBlock();
+    unsigned long  data_block_no=GetFreeBlock();
+    if(free_inode!=NULL && index_block_no!=MAX_FREE_BLOCKS && data_block_no!=MAX_FREE_BLOCKS){
+        free_inode->init(this,_file_id,index_block_no);
+        WriteToDisk(INODES_INDEX, (unsigned char*) inodes);
+        WriteToDisk(FREELIST_INDEX, free_blocks);
 
+        unsigned long *index_block=new unsigned long[MAX_FREE_BLOCKS/4];
+        index_block[0]=data_block_no;
+        WriteToDisk(index_block_no,(unsigned char*) index_block);
+        delete []index_block;
+        Console::puts("File Created SuccessFully For: ");
+        Console::puti(_file_id); 
+        Console::puts("\n");   
+        Console::puts("CreateFile - end\n"); 
+        return true;
+    }
+    else{
+        if(free_inode!=NULL)
+            free_inode->is_inode_free=true;
+        if(index_block_no!=MAX_FREE_BLOCKS)
+            free_blocks[index_block_no]=FREE;
+        if(data_block_no!=MAX_FREE_BLOCKS)
+            free_blocks[data_block_no]=FREE;
+        Console::puts("File Creation Failed for: ");
+        Console::puti(_file_id); 
+        Console::puts("\n");    
+        Console::puts("CreateFile - end\n"); 
+        return false;
+    }
+    #else
     Inode *free_inode= GetFreeInode();
     unsigned long  block_no=GetFreeBlock();
     if(free_inode!=NULL && block_no!=MAX_FREE_BLOCKS){
@@ -241,9 +297,47 @@ bool FileSystem::CreateFile(int _file_id) {
         Console::puts("CreateFile - end\n"); 
         return false;
     }
+    #endif
 }
 
 bool FileSystem::DeleteFile(int _file_id) {
+     #ifdef _LARGE_FILE_
+    Console::puts("DeleteFile - start\n"); 
+    Console::puts("deleting file with id: "); 
+    Console::puti(_file_id); 
+    Console::puts("\n");
+    /* First, check if the file exists. If not, throw an error. 
+       Then free all blocks that belong to the file and delete/invalidate 
+       (depending on your implementation of the inode list) the inode. */
+    // assert(false);
+
+    Inode * inode_found =LookupFile(_file_id);
+    if(inode_found==NULL){
+        Console::puts("File Does not Exists for: ");
+        Console::puti(_file_id); 
+        Console::puts("\n");    
+        Console::puts("DeleteFile - end\n"); 
+        return false;
+    }
+    inode_found->is_inode_free=true;
+    unsigned long index_block_no= inode_found->index_block_no;
+    free_blocks[index_block_no]=FREE;
+
+    unsigned long * data_index_block= new unsigned long[MAX_FREE_BLOCKS/4];
+    ReadFromDisk(index_block_no, (unsigned char*)data_index_block);
+    for(int itr=0;itr<inode_found->number_of_blocks;itr++){
+        unsigned long data_index_block_no=data_index_block[itr];
+        free_blocks[data_index_block_no]=FREE;
+    }
+    delete []data_index_block;
+    WriteToDisk(INODES_INDEX, (unsigned char*) inodes);
+    WriteToDisk(FREELIST_INDEX, free_blocks);
+    Console::puts("File Deleted ");
+    Console::puti(_file_id); 
+    Console::puts("\n");    
+    Console::puts("DeleteFile - end\n"); 
+    return true;
+    #else
     Console::puts("DeleteFile - start\n"); 
     Console::puts("deleting file with id: "); 
     Console::puti(_file_id); 
@@ -271,5 +365,6 @@ bool FileSystem::DeleteFile(int _file_id) {
     Console::puts("\n");    
     Console::puts("DeleteFile - end\n"); 
     return true;
+    #endif
 }
 

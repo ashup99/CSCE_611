@@ -15,7 +15,7 @@
 /* DEFINES */
 /*--------------------------------------------------------------------------*/
 
-/* -- (none) -- */
+// #define _LARGE_FILE_
 
 /*--------------------------------------------------------------------------*/
 /* INCLUDES */
@@ -51,9 +51,13 @@ private:
        the file you will read or write next. */
     FileSystem *fs;
     Inode *current_inode;
-    unsigned long current_inode_itr;
     unsigned long file_size;
     unsigned long current_position;
+    #ifdef _LARGE_FILE_
+    // static constexpr unsigned int MAX_FREE_BLOCKS = SimpleDisk::BLOCK_SIZE / sizeof(unsigned char);
+    unsigned long current_data_block_no;
+    unsigned long data_block[FileSystem::MAX_FREE_BLOCKS/4];
+    #endif
     unsigned char block_cache[SimpleDisk::BLOCK_SIZE];
     /* It will be helpful to have a cached copy of the block that you are reading
        from and writing to. In the base submission, files have only one block, which

@@ -19,6 +19,7 @@
 
 #define MB * (0x1 << 20)
 #define KB * (0x1 << 10)
+// #define _LARGE_FILE_
 
 /*--------------------------------------------------------------------------*/
 /* INCLUDES */
@@ -100,7 +101,84 @@ FileSystem * FILE_SYSTEM;
 /*--------------------------------------------------------------------------*/
 
 void exercise_file_system(FileSystem * _file_system) {
+
+    #ifdef _LARGE_FILE_
+    Console::puti(SimpleDisk::BLOCK_SIZE );
+    Console::puts("\n");
+    Console::puti(SimpleDisk::BLOCK_SIZE / sizeof(unsigned char));
+    Console::puts("\n");
+    int MAX_STRING=512;
+    char STRING1[MAX_STRING];
+    char STRING2[MAX_STRING];
+
+    for(int i=0;i<MAX_STRING;i++){
+        int digit_pos = i%10;
+        STRING1[i]='0'+digit_pos;
+    }
+    for(int i=0;i<MAX_STRING;i++){
+        int char_pos = i%26;
+        STRING2[i]='a'+char_pos;
+    }
+
+    /* -- Create two files -- */
     
+    assert(_file_system->CreateFile(1));
+    assert(_file_system->CreateFile(2));
+    
+    /* -- "Open" the two files -- */
+    
+    {
+        File file1(_file_system, 1);
+        File file2(_file_system, 2);
+    
+        /* -- Write into File 1 -- */
+        for (int i = 0; i < 128; ++i)
+        {
+        file1.Write(MAX_STRING, (const char*)&STRING1);
+        }
+    
+        /* -- Write into File 2 -- */
+    
+        for (int i = 0; i < 128; ++i)
+        {
+        file2.Write(MAX_STRING, (const char*)&STRING2);
+        }
+    
+        /* -- Files will get automatically closed when we leave scope  -- */
+    }
+
+    {   
+        /* -- "Open files again -- */
+        File file1(_file_system, 1);
+        File file2(_file_system, 2);
+    
+        /* -- Read from File 1 and check result -- */
+        file1.Reset();
+        char result1[MAX_STRING];
+         for (int j = 0; j < 128; j++)
+        {
+        assert(file1.Read(MAX_STRING, result1) == MAX_STRING);
+        for(int i = 0; i < MAX_STRING; i++) {
+             assert(result1[i] == STRING1[i]);
+        }
+    }
+
+         /* -- Read from File 1 and check result -- */
+        file2.Reset();
+        char result2[MAX_STRING];
+         for (int j = 0; j < 128; j++)
+        {
+        assert(file2.Read(MAX_STRING, result2) == MAX_STRING);
+        for(int i = 0; i < MAX_STRING; i++) {
+             assert(result2[i] == STRING2[i]);
+        }
+    }
+        /* -- "Close" files again -- */
+    }
+    /* -- Delete both files -- */
+    assert(_file_system->DeleteFile(1));
+    assert(_file_system->DeleteFile(2));
+    #else
     const char * STRING1 = "01234567890123456789";
     const char * STRING2 = "abcdefghijabcdefghij";
     
@@ -153,6 +231,7 @@ void exercise_file_system(FileSystem * _file_system) {
     /* -- Delete both files -- */
     assert(_file_system->DeleteFile(1));
     assert(_file_system->DeleteFile(2));
+    #endif
     
 }
 

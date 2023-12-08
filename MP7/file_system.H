@@ -18,7 +18,7 @@
 /* DEFINES */
 /*--------------------------------------------------------------------------*/
 
-/* -- (none) -- */
+// #define _LARGE_FILE_
 
 /*--------------------------------------------------------------------------*/
 /* INCLUDES */
@@ -44,9 +44,14 @@ class Inode
 
 private:
   long id; // File "name"
-  unsigned long block_no;
   unsigned long file_size;
   bool is_inode_free;
+  #ifdef _LARGE_FILE_
+  unsigned long number_of_blocks;
+  unsigned long index_block_no;
+  #else
+  unsigned long block_no;
+  #endif
 
   /* You will need additional information in the inode, such as allocation 
      information. */
@@ -58,7 +63,13 @@ private:
 
   /* You may need a few additional functions to help read and store the 
      inodes from and to disk. */
+   
+    #ifdef _LARGE_FILE_
+  unsigned long getAndWriteFreeBlock();
+  void init(FileSystem* _fs, long _file_id, unsigned long _index_block_no);
+    #else
   void init(FileSystem* _fs, long _file_id, unsigned long _block_no);
+  #endif
 
   void updateInodesList();
 };
@@ -84,7 +95,6 @@ private:
   SimpleDisk *disk;
   unsigned int size;
 
-  static constexpr unsigned int MAX_FREE_BLOCKS = SimpleDisk::BLOCK_SIZE / sizeof(unsigned char);
   static constexpr unsigned int MAX_INODES = SimpleDisk::BLOCK_SIZE / sizeof(Inode);
   /* Just as an example, you can store MAX_INODES in a single INODES block */
 
@@ -104,6 +114,7 @@ private:
      blocks. These functions also come useful to class Inode and File. */
 
 public:
+  static constexpr unsigned int MAX_FREE_BLOCKS = SimpleDisk::BLOCK_SIZE / sizeof(unsigned char);
   static const unsigned int MAX_FILE_SIZE = SimpleDisk::BLOCK_SIZE * 128;
   FileSystem();
   /* Just initializes local data structures. Does not connect to disk yet. */
