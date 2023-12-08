@@ -19,7 +19,7 @@
 
 #define MB *(0x1 << 20)
 #define KB *(0x1 << 10)
-#define _LARGE_FILE_
+// #define _LARGE_FILE_
 
 /*--------------------------------------------------------------------------*/
 /* INCLUDES */
