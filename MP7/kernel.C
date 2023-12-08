@@ -19,7 +19,7 @@
 
 #define MB *(0x1 << 20)
 #define KB *(0x1 << 10)
-// #define _LARGE_FILE_
+#define _LARGE_FILE_
 
 /*--------------------------------------------------------------------------*/
 /* INCLUDES */
@@ -107,10 +107,6 @@ void exercise_file_system(FileSystem *_file_system)
 {
 
 #ifdef _LARGE_FILE_
-    Console::puti(SimpleDisk::BLOCK_SIZE);
-    Console::puts("\n");
-    Console::puti(SimpleDisk::BLOCK_SIZE / sizeof(unsigned char));
-    Console::puts("\n");
     int MAX_STRING = 512;
     char STRING1[MAX_STRING];
     char STRING2[MAX_STRING];
